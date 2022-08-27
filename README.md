@@ -5,6 +5,8 @@
 Suitable for organizations, schools and offices that need to hold internet meetings in audio and video format and want them to be presented in the form of a classroom or an official meeting.
 Power from [Limoo](https://limoo.im)
 
+[**Download Now**](https://raw.githubusercontent.com/omidima/callimo/main/assets/app.apk)
+
 
 ## Futures
 
