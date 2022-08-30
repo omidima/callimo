@@ -15,6 +15,7 @@ import '../../../../main.dart';
 import '../../../widget/form_input/form_button.dart';
 import '../../../widget/form_input/form_text_input.dart';
 import '../../../widget/limoo_logo.dart';
+import '../../video_call/video_call.dart';
 
 class HomeScreen extends CallimooView with _Widgets {
   static get route => MaterialPageRoute(
@@ -87,7 +88,7 @@ class HomeScreen extends CallimooView with _Widgets {
             ),
             _limoo(),
             Expanded(
-                child: _form(
+                child: _form(context,
                     (value) => Navigator.of(context)
                         .pushNamed('/call', arguments: [value, false]),
                     () => showDialog(
@@ -134,7 +135,7 @@ mixin _Widgets {
     return LimooLogo(title: "به کالیمو خوش اومدی.");
   }
 
-  Widget _form(Function(String? value) onSubmit, Function() onCreateSession) {
+  Widget _form(BuildContext context,Function(String? value) onSubmit, Function() onCreateSession) {
     String? value;
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -154,7 +155,16 @@ mixin _Widgets {
             icon: InkWell(
               onTap: () async {
                 if (value != null) {
-                  await launchUrl(Uri.parse(value!.replaceAll(" ", "")));
+                  Navigator.of(context)
+                      .pushNamed(VideoCallScreen.pageName, arguments: [
+                    CallItemObject()
+                      ..name = "call"
+                      ..adminLink = value!.replaceAll(" ", "")
+                      ..publicLink = value!.replaceAll(" ", "")
+                      ..createdAt = 0
+                      ..id = "call",
+                    true
+                  ]);
                 }
               },
               child: const Icon(Icons.arrow_forward),

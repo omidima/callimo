@@ -7,10 +7,8 @@ import "package:flutter/foundation.dart" show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:dio/dio.dart';
-import 'package:dio/adapter_browser.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:webviewx/webviewx.dart';
 import 'package:http/http.dart' as http;
 import 'package:callimoo/data/hive/objects/call_item_object.dart';
 import 'package:callimoo/main.dart';
@@ -81,8 +79,6 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
       return false;
     }
   }
-
-  WebViewXController? _controller;
 
   @override
   Widget build(BuildContext context) {
@@ -156,12 +152,13 @@ class __OsWebviewState extends State<_OsWebview> {
   InAppWebViewController? webViewController;
   InAppWebViewGroupOptions options = InAppWebViewGroupOptions(
       crossPlatform: InAppWebViewOptions(
-        userAgent:
-            "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.117 Safari/537.36",
+        userAgent: Platform.isIOS ?
+            "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.117 Safari/537.36" : "",
         mediaPlaybackRequiresUserGesture: false,
       ),
       android: AndroidInAppWebViewOptions(
         useHybridComposition: true,
+        useWideViewPort: true
       ),
       ios: IOSInAppWebViewOptions(
         allowsInlineMediaPlayback: true,
@@ -255,25 +252,24 @@ class __OsWebviewState extends State<_OsWebview> {
                 // get the CookieManager instance
                 var cookieManager;
                 if (Platform.isIOS) {
-                  cookieManager = CookieManager.instance();
-                } else {
                   cookieManager = IOSCookieManager.instance();
+                } else {
+                  cookieManager = CookieManager.instance();
                 }
-
-                // set the access token
-                await cookieManager.setCookie(
-                    url: Uri.parse(widget.uri),
-                    name: "ACCESSTOKEN",
-                    value: widget.token ?? "",
-                    isSecure: false,
-                    isHttpOnly: false,
-                    sameSite: HTTPCookieSameSitePolicy.NONE);
-                // controller.
 
                 await webViewController!.loadUrl(
                     urlRequest: URLRequest(
                         url: Uri.parse(widget.uri),
                         headers: {"Authorization": 'Bearer ${widget.token}'}));
+
+                // set the access token
+                await cookieManager.setCookie(
+                    url: Uri.parse("https://web.limoo.im"),
+                    name: "ACCESSTOKEN",
+                    value: widget.token ?? "",
+                    isSecure: true,
+                    isHttpOnly: false,
+                    sameSite: HTTPCookieSameSitePolicy.NONE);
               },
               androidOnPermissionRequest:
                   (controller, origin, resources) async {
