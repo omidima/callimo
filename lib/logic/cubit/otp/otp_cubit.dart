@@ -1,7 +1,10 @@
+import 'package:callimoo/data/base/config.dart';
 import 'package:callimoo/data/base/pref_key.dart';
 import 'package:callimoo/data/base/resource.dart';
 import 'package:callimoo/data/hive/dto/app_dto.dart';
+import 'package:callimoo/data/network/dto/config/config_dto.dart';
 import 'package:callimoo/data/network/dto/workspace/workspace_dto.dart';
+import 'package:callimoo/data/repositories/conversation_repository.dart';
 import 'package:callimoo/main.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -16,10 +19,14 @@ part 'otp_state.dart';
 class OtpCubit extends Cubit<OtpState> {
   UserRepository userRepository;
   WorkspaceRepository workspaceRepository;
-  OtpCubit({
-    UserRepository? userRepository,
-    WorkspaceRepository? workspaceRepository,
-  })  : userRepository = userRepository ?? UserRepository.getInstance,
+  ConversationRepository _conversationRepository;
+  OtpCubit(
+      {UserRepository? userRepository,
+      WorkspaceRepository? workspaceRepository,
+      ConversationRepository? conversationRepository})
+      : userRepository = userRepository ?? UserRepository.getInstance,
+        _conversationRepository =
+            conversationRepository ?? ConversationRepository.getInstance,
         workspaceRepository =
             workspaceRepository ?? WorkspaceRepository.getInstance,
         super(InitState());
@@ -77,7 +84,8 @@ class OtpCubit extends Cubit<OtpState> {
 
     if (workspaces.status == ResourceStatus.success) {
       workspaces.data?.forEach((element) {
-        if (element.displayName == "call_log" || element.name == "call_log") {
+        if (element.displayName == ConfigApp.conversationName ||
+            element.name == ConfigApp.conversationName) {
           hasCallWorkspace = true;
           AppDto.setWorkspace(element);
         }
@@ -87,30 +95,42 @@ class OtpCubit extends Cubit<OtpState> {
     if (!hasCallWorkspace) {
       var workspace =
           await workspaceRepository.createWorkspace(WorkspaceCreateDto(
-        displayName: "call_log",
+        displayName: ConfigApp.conversationName,
       ));
       workspace.when(
           success: (success) async {
-            Callimoo.config.put(PrefKey.WORKSPACE, success);
+            AppDto.setWorkspace(success);
             await _createConversation(success);
           },
           failure: (failure) {});
     }
 
-    if (Callimoo.config.get(PrefKey.CONVERSATION) == null) {
+    if (AppDto.getConversation == null) {
       await _createConversation(AppDto.getWorkspace!);
     }
   }
 
   _createConversation(WorkspaceDto workspaceDto) async {
+    bool hasCallConversation = false;
+
     var conversations =
         await userRepository.getUserConversations(workspaceDto.id!, "");
     if (conversations.status == ResourceStatus.success) {
       conversations.data?.forEach((element) {
-        if (element.displayName == "لابی") {
+        if (element.displayName == ConfigApp.conversationName) {
+          hasCallConversation = true;
           AppDto.setConversation(element);
         }
       });
+    }
+
+    if (!hasCallConversation) {
+      var conversation =
+          await _conversationRepository.createConversation(workspaceDto.id!);
+
+      if (conversation.status == ResourceStatus.success) {
+        AppDto.setConversation(conversation.data!);
+      }
     }
   }
 }

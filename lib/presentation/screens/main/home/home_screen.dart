@@ -42,10 +42,8 @@ class HomeScreen extends CallimooView with _Widgets {
       Callimoo.calls.add(onj);
       if (isOpenModal) {
         Navigator.of(context).pop();
-        Navigator.of(context).pushNamed(
-          CallDetailScreen.pageName,
-          arguments: onj
-        );
+        Navigator.of(context)
+            .pushNamed(CallDetailScreen.pageName, arguments: onj);
       }
     });
   }
@@ -99,7 +97,10 @@ class HomeScreen extends CallimooView with _Widgets {
                           return Dialog(
                             child: _CreateCall(
                               onCancell: null,
-                              onSubmit: null,
+                              onSubmit: (e) {
+                                Navigator.of(context).pop();
+                                print("clicked");
+                              },
                             ),
                           );
                         })))
@@ -272,6 +273,7 @@ class __CreateCallState extends State<_CreateCall> {
                                     color: AppColors.primaryColor,
                                     onPressed: () {
                                       _cubit.createCallMessage();
+                                      widget.onSubmit!("Asdc");
                                     },
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,

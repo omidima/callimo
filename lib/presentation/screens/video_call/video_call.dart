@@ -1,19 +1,22 @@
+import 'dart:convert';
 import 'dart:io';
 
-import 'package:callimoo/presentation/screens/video_call/webview.dart';
+import 'package:callimoo/data/repositories/config_repository.dart';
+import 'package:callimoo/logic/util/logger.dart';
 import "package:flutter/foundation.dart" show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:dio/dio.dart';
+import 'package:dio/adapter_browser.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webviewx/webviewx.dart';
-
+import 'package:http/http.dart' as http;
 import 'package:callimoo/data/hive/objects/call_item_object.dart';
 import 'package:callimoo/main.dart';
 
 import '../../../data/base/pref_key.dart';
 import '../../../logic/constants/colors/app_colors.dart';
-import '../../../logic/constants/strings/strings.dart';
 
 class VideoCallScreen extends StatefulWidget {
   static get pageName => "/call";
@@ -72,8 +75,8 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
 
   isPlatform() {
     try {
-      // Platform.isAndroid || Platform.isIOS;
-      return false;
+      Platform.isAndroid || Platform.isIOS;
+      return true;
     } catch (e) {
       return false;
     }
@@ -81,11 +84,10 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
 
   WebViewXController? _controller;
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.secondaryDarkColor,
+      backgroundColor: kIsWeb ? Colors.white : AppColors.secondaryDarkColor,
       body: Stack(alignment: Alignment.center, children: [
         accessToken == null
             ? Center(
@@ -96,27 +98,41 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
                     uri: widget.meetingId,
                     token: accessToken,
                   )
-                : Container(
-                    // color: Colors.white,
-                    child: WebViewX(
-                      width: MediaQuery.of(context).size.width,
-                      height: MediaQuery.of(context).size.height,
-                      webSpecificParams: WebSpecificParams(),
-                      mobileSpecificParams: MobileSpecificParams(),
-                      javascriptMode: JavascriptMode.unrestricted,
-                      onWebViewCreated: (controller) async {
-                        var accessToken =
-                            await Callimoo.config.get(PrefKey.ACCESS_TOKEN);
-                        controller.setIgnoreAllGestures(false);
-
-                        controller.loadContent(
-                            widget.meetingId, SourceType.urlBypass,
-                            headers: {"Authorization": 'Bearer $accessToken'});
-                      },
-                      userAgent:
-                          "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.117 Safari/537.36",
+                : Center(
+                    child: Container(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                            "برای مدیریت جلسات و دیدن تاریحچه کامل آنها، به لیمو وارد شوید و در فضای کاری کالیمو در گروه **جلسات** میتوانید لیستی از تماسهای تصویری خود را مشاهده نمایید. \n لیمو یک ابزار پیام‌رسان درون تیمی/سازمانی است که به شما کمک میکنه بتوانید ارتباط یکپارچه و مؤثری را بر با همکاران خود داشته باشید."),
+                        const SizedBox(height: 20,),
+                        InkWell(
+                          onTap: () async {
+                            if (kIsWeb) {
+                              await launchUrl(
+                                  Uri.parse("https://web.limoo.im"));
+                            }else {
+                              Navigator.of(context).pushNamed(
+                                  VideoCallScreen.pageName,
+                                  arguments: [
+                                    CallItemObject()
+                                      ..name = "call"
+                                      ..adminLink = "https://web.limoo.im"
+                                      ..publicLink = "https://web.limoo.im"
+                                      ..createdAt = 0
+                                      ..id = "call",
+                                    true
+                                  ]);
+                            }
+                          },
+                          child: const Text(
+                            "به لیمو وارد شوید",
+                            style: TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                        )
+                      ],
                     ),
-                  ),
+                  )),
       ]),
     );
   }
@@ -140,6 +156,8 @@ class __OsWebviewState extends State<_OsWebview> {
   InAppWebViewController? webViewController;
   InAppWebViewGroupOptions options = InAppWebViewGroupOptions(
       crossPlatform: InAppWebViewOptions(
+        userAgent:
+            "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.117 Safari/537.36",
         mediaPlaybackRequiresUserGesture: false,
       ),
       android: AndroidInAppWebViewOptions(
@@ -164,14 +182,12 @@ class __OsWebviewState extends State<_OsWebview> {
       onRefresh: () async {
         try {
           if (Platform.isAndroid) {
-          webViewController?.reload();
-        } else if (Platform.isIOS) {
-          webViewController?.loadUrl(
-              urlRequest: URLRequest(url: await webViewController?.getUrl()));
-        }
-        }catch (e) {
-          
-        }
+            webViewController?.reload();
+          } else if (Platform.isIOS) {
+            webViewController?.loadUrl(
+                urlRequest: URLRequest(url: await webViewController?.getUrl()));
+          }
+        } catch (e) {}
       },
     );
   }
@@ -232,13 +248,32 @@ class __OsWebviewState extends State<_OsWebview> {
           children: [
             InAppWebView(
               key: webViewKey,
-              initialUrlRequest: URLRequest(
-                  url: Uri.parse(widget.uri),
-                  headers: {"Authorization": 'Bearer ${widget.token}'}),
               initialOptions: options,
               pullToRefreshController: pullToRefreshController,
-              onWebViewCreated: (controller) {
+              onWebViewCreated: (controller) async {
                 webViewController = controller;
+                // get the CookieManager instance
+                var cookieManager;
+                if (Platform.isIOS) {
+                  cookieManager = CookieManager.instance();
+                } else {
+                  cookieManager = IOSCookieManager.instance();
+                }
+
+                // set the access token
+                await cookieManager.setCookie(
+                    url: Uri.parse(widget.uri),
+                    name: "ACCESSTOKEN",
+                    value: widget.token ?? "",
+                    isSecure: false,
+                    isHttpOnly: false,
+                    sameSite: HTTPCookieSameSitePolicy.NONE);
+                // controller.
+
+                await webViewController!.loadUrl(
+                    urlRequest: URLRequest(
+                        url: Uri.parse(widget.uri),
+                        headers: {"Authorization": 'Bearer ${widget.token}'}));
               },
               androidOnPermissionRequest:
                   (controller, origin, resources) async {
