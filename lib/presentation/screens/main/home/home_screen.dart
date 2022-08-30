@@ -100,7 +100,6 @@ class HomeScreen extends CallimooView with _Widgets {
                               onCancell: null,
                               onSubmit: (e) {
                                 Navigator.of(context).pop();
-                                print("clicked");
                               },
                             ),
                           );

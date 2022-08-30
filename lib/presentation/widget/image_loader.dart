@@ -98,7 +98,6 @@ class _ImageLoaderState extends State<ImageLoader> {
       header["Authorization"] = "Bearer $accessToken";
     });
     var fileUrl = await Callimoo.config.get(PrefKey.WORKER_FILE_URL);
-    print("images ${fileUrl}");
     this.url.clear();
     this.url.write("${fileUrl.toString()}/v1/files?mode=view&hash=$iconHash");
   }

@@ -29,7 +29,6 @@ class WebSocket extends WebSocketAction {
       channel = IOWebSocketChannel.connect(webSocketUrl, headers: header);
     }
     channel.stream.listen(onMessageReceived, onError: (e) {
-      print("Socket: reconnect");
     });
   }
 
@@ -57,7 +56,6 @@ class WebSocket extends WebSocketAction {
         filteringWebSocketState(body['event'], json.encode(body['data']));
       }
     } catch (error) {
-      print("SOCKET: Error $error Data: $message");
     }
   }
 

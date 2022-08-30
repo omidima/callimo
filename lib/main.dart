@@ -23,7 +23,7 @@ import 'presentation/screens/login/otp_registration/otp_registration.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  Logger.setDebugMode = true;
+  Logger.setDebugMode = false;
   await Hive.initFlutter();
   Hive.registerAdapter(CallItemObjectAdapter());
   Hive.registerAdapter(WorkspaceDtoAdapter());
