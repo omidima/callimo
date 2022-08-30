@@ -44,7 +44,6 @@ dependencies:
   file_picker: ^5.0.1
   permission_handler: ^10.0.0
   cached_network_image: ^3.2.1
-  webviewx: ^0.2.1
   shamsi_date: ^1.0.1
   url_launcher: ^6.1.5
   fluttertoast: ^8.0.9
@@ -79,8 +78,6 @@ flutter:
   assets:
     - assets/
     - assets/png100px/
-    - assets/emoji/emojis.json
-    - assets/sounds/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

@@ -1,7 +1,10 @@
 import 'package:callimoo/data/base/NetworkBoundResource.dart';
+import 'package:callimoo/data/base/config.dart';
 import 'package:callimoo/data/base/resource.dart';
 import 'package:callimoo/data/hive/dto/app_dto.dart';
 import 'package:callimoo/data/hive/objects/call_item_object.dart';
+import 'package:callimoo/data/network/dto/conversation/conversation_dto.dart';
+import 'package:callimoo/data/network/dto/conversation/create_group.dart';
 import 'package:callimoo/data/network/dto/message/message_dto.dart';
 import 'package:callimoo/logic/util/helper.dart';
 import 'package:callimoo/main.dart';
@@ -19,7 +22,6 @@ class ConversationRepository extends BaseRepository {
 
   Future<ApiWrapper<BbbDto>> createVideoCall(
       String conversationId, String name) async {
-    print('clicked');
     try {
       String workspaceId = AppDto.getWorkspace!.id!;
       return ApiWrapper.success(
@@ -44,7 +46,7 @@ class ConversationRepository extends BaseRepository {
     }, processResponse: (data) {
       return data
           .map((e) => CallItemObject()
-          ..id = e.id!
+            ..id = e.id!
             ..adminLink = adminLinkFinder(e.text ?? "")!
             ..publicLink = publicLinkFinder(e.text ?? "")
             ..createdAt = e.createAt
@@ -65,5 +67,18 @@ class ConversationRepository extends BaseRepository {
       return await restProvider.deleteMessage(
           workspaceId, conversationId, messageId);
     });
+  }
+
+  Future<Resource<ConversationDto>> createConversation(
+      String workspaceId) {
+    return NetworkBoundResource<ConversationDto, ConversationDto>().asFutureNetwotk(
+      createCall: () async => restProvider.createGroup(
+          workspaceId,
+          CreateGroup(
+              displayName: ConfigApp.conversationName,
+              type: "public",
+              header:
+                  "جلسات تصویری کالیمو را میتوانید دراین قسمت مدیریت کنید")),
+    );
   }
 }

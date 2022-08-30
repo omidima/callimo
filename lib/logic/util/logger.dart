@@ -15,7 +15,7 @@ class Logger {
   static void _printer(String color, String tag, dynamic value) {
     String text =
         "$color\n$tag: \n${'-' * 60}\n${_valueHandler(value)} \n${'-' * 60} ";
-    developer.log(text);
+    print(text);
   }
 
   static String _valueHandler(dynamic value) {

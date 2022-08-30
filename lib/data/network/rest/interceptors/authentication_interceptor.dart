@@ -1,3 +1,4 @@
+import 'package:callimoo/data/provider/websoket/socket_manager.dart';
 import 'package:callimoo/main.dart';
 import 'package:dio/dio.dart';
 import '../../../../logic/util/helper.dart';
@@ -23,19 +24,17 @@ class AuthenticationInterceptor extends Interceptor {
     if (response.statusCode != 401) {
       return super.onResponse(response, handler);
     } else if (response.statusCode == 401) {
-    print("in response");
+      //   String? refreshToken = await Callimoo.config.get(PrefKey.REFRESH_TOKEN);
+      //   String? keycloakRefreshToken =
+      //       await Callimoo.config.get(PrefKey.KEYCLOAK_REFRESH_TOKEN);
 
-    //   String? refreshToken = await Callimoo.config.get(PrefKey.REFRESH_TOKEN);
-    //   String? keycloakRefreshToken =
-    //       await Callimoo.config.get(PrefKey.KEYCLOAK_REFRESH_TOKEN);
-
-    //   if (refreshToken != null) {
-    //     await _getNewToken(response, handler);
-    //   } else {
-    //     return super.onError(err, handler);
-    //   }
-    // } else {
-    //   return super.onError(err, handler);
+      //   if (refreshToken != null) {
+      //     await _getNewToken(response, handler);
+      //   } else {
+      //     return super.onError(err, handler);
+      //   }
+      // } else {
+      //   return super.onError(err, handler);
     }
   }
 
@@ -59,14 +58,14 @@ class AuthenticationInterceptor extends Interceptor {
   _getNewToken(DioError error, ErrorInterceptorHandler handler) async {
     // await _lockDio();
     // try {
-      String refreshToken = await Callimoo.config.get(PrefKey.REFRESH_TOKEN);
-      var dio = Dio();
-      var response = await dio.post(
-          '${BaseRepository.url}j_spring_jwt_security_check',
-          options: Options(headers: {"Refresh": refreshToken}));
-      await _setNewToken(response);
-      // await _unLocDio();
-      await _requestAgainLastApiCall(error, handler);
+    String refreshToken = await Callimoo.config.get(PrefKey.REFRESH_TOKEN);
+    var dio = Dio();
+    var response = await dio.post(
+        '${BaseRepository.url}j_spring_jwt_security_check',
+        options: Options(headers: {"Refresh": refreshToken}));
+    await _setNewToken(response);
+    // await _unLocDio();
+    await _requestAgainLastApiCall(error, handler);
     // } catch (e) {
     //   // await _unLocDio();
     //   return super.onError(error, handler);
@@ -106,6 +105,8 @@ class AuthenticationInterceptor extends Interceptor {
       PrefKey.REFRESH_TOKEN,
       refreshTokenFinder(response.headers.toString()),
     );
+
+    SocketManager.getInstance.reconnectWebSockets();
   }
 
   _requestAgainLastApiCall(
