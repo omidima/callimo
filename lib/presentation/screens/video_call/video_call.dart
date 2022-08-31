@@ -79,10 +79,18 @@ class _VideoCallScreenState extends State<VideoCallScreen> {
       return true;
     } catch (e) {
       if (MediaQuery.of(context).size.width < 500) {
-        return true;
+        runIosWeb();
       }
       return false;
     }
+  }
+
+  runIosWeb() async {
+    await launchUrl(Uri.parse("https://web.limoo.im"),
+        mode: LaunchMode.externalApplication,
+        webOnlyWindowName: "window",
+        webViewConfiguration: WebViewConfiguration(
+            enableJavaScript: true, enableDomStorage: true));
   }
 
   @override

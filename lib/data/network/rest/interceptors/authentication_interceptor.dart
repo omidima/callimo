@@ -12,9 +12,7 @@ class AuthenticationInterceptor extends Interceptor {
   void onRequest(
       RequestOptions options, RequestInterceptorHandler handler) async {
     var accessToken = await Callimoo.config.get(PrefKey.ACCESS_TOKEN);
-
-    if (accessToken != null)
-      options.headers["Authorization"] = "Bearer $accessToken";
+    options.headers["Authorization"] = "Bearer $accessToken";
 
     return super.onRequest(options, handler);
   }
@@ -23,18 +21,6 @@ class AuthenticationInterceptor extends Interceptor {
   void onResponse(Response response, ResponseInterceptorHandler handler) async {
     if (response.statusCode != 401) {
       return super.onResponse(response, handler);
-    } else if (response.statusCode == 401) {
-      //   String? refreshToken = await Callimoo.config.get(PrefKey.REFRESH_TOKEN);
-      //   String? keycloakRefreshToken =
-      //       await Callimoo.config.get(PrefKey.KEYCLOAK_REFRESH_TOKEN);
-
-      //   if (refreshToken != null) {
-      //     await _getNewToken(response, handler);
-      //   } else {
-      //     return super.onError(err, handler);
-      //   }
-      // } else {
-      //   return super.onError(err, handler);
     }
   }
 
@@ -42,8 +28,6 @@ class AuthenticationInterceptor extends Interceptor {
   void onError(DioError err, ErrorInterceptorHandler handler) async {
     if (err.response == null || err.response!.statusCode == 401) {
       String? refreshToken = await Callimoo.config.get(PrefKey.REFRESH_TOKEN);
-      String? keycloakRefreshToken =
-          await Callimoo.config.get(PrefKey.KEYCLOAK_REFRESH_TOKEN);
 
       if (refreshToken != null) {
         await _getNewToken(err, handler);
